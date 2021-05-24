@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="5.0.0" />
@@ -15,12 +16,18 @@
     <PackageReference Include="Microsoft.Graph.Auth" Version="1.0.0-preview.0" />
     <PackageReference Include="Microsoft.Graph.Core" Version="1.24.0" />
     <PackageReference Include="Microsoft.Identity.Client" Version="4.28.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="RateLimiter" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="..\data\**">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RandomNameGen\RandomNameGen\RandomNameGen.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="appsettings.json">

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "b2c-ms-graph": {
+      "commandName": "Project",
+      "commandLineArgs": "-u 1000 -r 500"
+    }
+  }
+}
