@@ -107,6 +107,8 @@ Console Switches
 
 -d Run Decision based on console options 1-10
 
+-t tenant Id for AAD B2C teanant
+
 -r rate limit (request per second rate limit)
 
 -u amount of users to generate if using the Creeate random options 
