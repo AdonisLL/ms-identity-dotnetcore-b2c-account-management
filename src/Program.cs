@@ -23,6 +23,7 @@ namespace b2c_ms_graph
             string appId = null;
             string appSecret = null;
             string runDecision = null;
+            string tenantId = null;
             int rateLimit = 0;
             int usersGenerated = 1000;
 
@@ -32,6 +33,10 @@ namespace b2c_ms_graph
                 if (!string.IsNullOrEmpty(o.Application))
                 {
                     appId = o.Application;
+                }
+                if (!string.IsNullOrEmpty(o.TenantId))
+                {
+                    tenantId = o.TenantId;
                 }
                 if (!string.IsNullOrEmpty(o.Secret))
                 {
@@ -63,11 +68,12 @@ namespace b2c_ms_graph
             AppSettings config = AppSettingsFile.ReadFromJsonFile();
             appId = appId ?? config.AppId;
             appSecret = appSecret ?? config.ClientSecret;
+            tenantId = tenantId ?? config.TenantId;
 
             // Initialize the client credential auth provider
             IConfidentialClientApplication confidentialClientApplication = ConfidentialClientApplicationBuilder
                 .Create(appId)
-                .WithTenantId(config.TenantId)
+                .WithTenantId(tenantId)
                 .WithClientSecret(appSecret)
                 .Build();
             ClientCredentialProvider authProvider = new ClientCredentialProvider(confidentialClientApplication);
