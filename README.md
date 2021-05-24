@@ -94,6 +94,30 @@ Looking for user with object ID '064deeb8-0000-0000-0000-bf4084c9325b'...
 {"displayName":"Autumn Hutchinson","identities":[{"signInType":"emailAddress","issuer":"contosob2c.onmicrosoft.com","issuerAssignedId":"autumn@fabrikam.com","@odata.type":"microsoft.graph.objectIdentity"},{"signInType":"userPrincipalName","issuer":"contosob2c.onmicrosoft.com","issuerAssignedId":"064deeb8-0000-0000-0000-bf4084c9325b@contosob2c.onmicrosoft.com","@odata.type":"microsoft.graph.objectIdentity"}],"id":"064deeb8-0000-0000-0000-bf4084c9325b","@odata.type":"microsoft.graph.user","@odata.context":"https://graph.microsoft.com/beta/$metadata#users(displayName,id,identities)/$entity","responseHeaders":{"Date":["Fri, 14 Feb 2020 18:52:56 GMT"],"Cache-Control":["no-cache"],"Transfer-Encoding":["chunked"],"Strict-Transport-Security":["max-age=31536000"],"request-id":["23165c3f-0000-0000-0000-f7fc59669c24"],"client-request-id":["23165c3f-0000-0000-0000-f7fc59669c24"],"x-ms-ags-diagnostic":["{\"ServerInfo\":{\"DataCenter\":\"WEST US 2\",\"Slice\":\"E\",\"Ring\":\"1\",\"ScaleUnit\":\"000\",\"RoleInstance\":\"MW1PEPF00001671\"}}"],"OData-Version":["4.0"]},"statusCode":"OK"}
 Enter command, then press ENTER: exit
 azureuser@machine:~/ms-identity-dotnetcore-b2c-account-management/src$
+
+If not running interactivly the values for "Run Decision", "rate limit" and "amount of users" should be supplied
+the values for application id , application secret, and tenant id can be supplied or the values in appSettings.json will be used as defaults 
+
+Additions
+Console Switches 
+
+-a Application ID, 
+
+-s Application Secret , 
+
+-d Run Decision based on console options 1-10
+
+-t tenant Id for AAD B2C teanant
+
+-r rate limit (request per second rate limit)
+
+-u amount of users to generate if using the Creeate random options 
+
+
+Added additional options 
+
+Create Random users (bulk import test)") - generates random user data to create users in AAD
+Create Random users Batch (bulk import batch test) - generates random user data to create users in AAD using batch request
 ```
 
 ## Key concepts
