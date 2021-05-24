@@ -23,6 +23,6 @@ namespace b2c_ms_graph.Models
         public int UserGeneration { get; set; }
 
         [Option('t', "tenantId", Required = false, HelpText = "Amount of users to generate when using the 'Create Random' test options")]
-        public int TenantId { get; set; }
+        public string TenantId { get; set; }
     }
 }
