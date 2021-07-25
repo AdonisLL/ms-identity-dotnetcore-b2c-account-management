@@ -23,7 +23,6 @@ namespace b2c_ms_graph
             string appId = null;
             string appSecret = null;
             string runDecision = null;
-            string tenantId = null;
             int rateLimit = 0;
             int usersGenerated = 1000;
 
@@ -33,10 +32,6 @@ namespace b2c_ms_graph
                 if (!string.IsNullOrEmpty(o.Application))
                 {
                     appId = o.Application;
-                }
-                if (!string.IsNullOrEmpty(o.TenantId))
-                {
-                    tenantId = o.TenantId;
                 }
                 if (!string.IsNullOrEmpty(o.Secret))
                 {
@@ -68,12 +63,11 @@ namespace b2c_ms_graph
             AppSettings config = AppSettingsFile.ReadFromJsonFile();
             appId = appId ?? config.AppId;
             appSecret = appSecret ?? config.ClientSecret;
-            tenantId = tenantId ?? config.TenantId;
 
             // Initialize the client credential auth provider
             IConfidentialClientApplication confidentialClientApplication = ConfidentialClientApplicationBuilder
                 .Create(appId)
-                .WithTenantId(tenantId)
+                .WithTenantId(config.TenantId)
                 .WithClientSecret(appSecret)
                 .Build();
             ClientCredentialProvider authProvider = new ClientCredentialProvider(confidentialClientApplication);
@@ -137,9 +131,12 @@ namespace b2c_ms_graph
                         case "10":
                             await UserService.ListUsersWithCustomAttribute(graphClient, config.B2cExtensionAppClientId);
                             break;
-                        //case "11":
-                        //    await UserService.UpdateUserTest(config, graphClient);
-                        //    break;
+                        case "11":
+                            await UserService.SendMessageBatchAsync(config);
+                            break;
+                        case "12":
+                            await UserService.SendEventHubMessageBatchAsync(config);
+                            break;
                         case "help":
                             Program.PrintCommands();
                             break;
@@ -181,7 +178,8 @@ namespace b2c_ms_graph
             Console.WriteLine("[8]      Create Random users Batch (bulk import batch test)");
             Console.WriteLine("[9]      Create user with custom attributes and show result");
             Console.WriteLine("[10]     Get all users (one page) with custom attributes");
-            //Console.WriteLine("[11]     Update user test (updates top 1000 users with new random properties)");
+            Console.WriteLine("[11]     Create Random Users in Service Bus Queue");
+            Console.WriteLine("[12]     Create Random Users in Event Hub");
             Console.WriteLine("[help]   Show available commands");
             Console.WriteLine("[exit]   Exit the program");
             Console.WriteLine("-------------------------");

@@ -41,5 +41,18 @@ namespace b2c_ms_graph
         [JsonProperty(PropertyName = "UsersFileName")]
         public string UsersFileName { get; set; }
 
+        [JsonProperty(PropertyName = "ServiceBusConnectionString")]
+        public string ServiceBusConnectionString { get; set; }
+
+        [JsonProperty(PropertyName = "ServiceBusQueue")]
+        public string ServiceBusQueue { get; set; }
+
+        [JsonProperty(PropertyName = "EventHubConnectionString")]
+        public string EventHubConnectionString { get; set; }
+
+
+
+
+
     }
 }

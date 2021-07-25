@@ -15,7 +15,8 @@ using System.Net.Http;
 using System.Text;
 using RateLimiter;
 using ComposableAsync;
-using Newtonsoft.Json.Linq;
+using Azure.Messaging.ServiceBus;
+using Azure.Messaging.EventHubs.Producer;
 
 namespace b2c_ms_graph
 {
@@ -319,7 +320,7 @@ namespace b2c_ms_graph
             var userList = GenerateRandomGraphUsers(GeneratedUserCount);
             userList.ToList().ForEach(x => x.SetB2CProfile(config.TenantId));
 
-            var batchSize = 20;
+            var batchSize = 100;
             int numberOfBatches = (int)Math.Ceiling((double)userList.Count / batchSize);
 
             var tasks = new List<Task>();
@@ -332,7 +333,7 @@ namespace b2c_ms_graph
                 {
 
                     var items = userList.Skip(i * batchSize).Take(batchSize).ToList();
-                    await timeConstraint;
+                    //await timeConstraint;
                     tasks.Add(CreateRandomGraphUserBatch(items, graphClient));
 
                 }
@@ -342,7 +343,7 @@ namespace b2c_ms_graph
 
                 foreach (var u in userList)
                 {
-                    await timeConstraint;
+                    //await timeConstraint;
                     tasks.Add(AddGraphUser(graphClient, u));
                 }
 
@@ -351,12 +352,13 @@ namespace b2c_ms_graph
             Task allTasks = Task.WhenAll(tasks);
             try
             {
-                await allTasks;
+                await allTasks.ConfigureAwait(false);
             }
             catch
             {
                 AggregateException allExceptions = allTasks.Exception;
             }
+
 
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
@@ -525,7 +527,7 @@ namespace b2c_ms_graph
             {
                 var user = new UserModel();
                 var username = name.Split(' ');
-                var email = $"{username[0]}.{username[1]}@{rd.RandomHostName(10)}";
+                var email = $"{username[0]}.{username[1]}@{rd.RandomHostName(15)}";
                 user.GivenName = username[0];
                 user.Surname = username[1];
                 user.DisplayName = $"[TEST] {username[0]} {username[1]} (Local account)";
@@ -564,6 +566,120 @@ namespace b2c_ms_graph
 
             return u;
         }
+
+
+        private static async Task SendMessageAsync(AppSettings config, string queueMessage)
+        {
+            // create a Service Bus client 
+            await using (ServiceBusClient client = new ServiceBusClient(config.ServiceBusConnectionString))
+            {
+                // create a sender for the queue 
+                ServiceBusSender sender = client.CreateSender(config.ServiceBusQueue);
+
+                // create a message that we can send
+                ServiceBusMessage message = new ServiceBusMessage(queueMessage);
+
+                // send the message
+                await sender.SendMessageAsync(message);
+                Console.WriteLine($"Sent a single message to the queue: {config.ServiceBusQueue}");
+            }
+        }
+
+
+
+        private static Queue<ServiceBusMessage> CreateMessages(AppSettings config)
+        {
+            // create a queue containing the messages and return it to the caller
+            Queue<ServiceBusMessage> messages = new Queue<ServiceBusMessage>();
+            var users = GenerateRandomGraphUsers(100);
+            users.ToList().ForEach(x => x.SetB2CProfile(config.TenantId));
+            users.ForEach(u => messages.Enqueue(new ServiceBusMessage(JsonConvert.SerializeObject(u))));
+            return messages;
+        }
+
+
+        public static async Task SendMessageBatchAsync(AppSettings config)
+        {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+
+            // create a Service Bus client 
+            await using (ServiceBusClient client = new ServiceBusClient(config.ServiceBusConnectionString))
+            {
+
+                // create a sender for the queue 
+                ServiceBusSender sender = client.CreateSender(config.ServiceBusQueue);
+
+                // get the messages to be sent to the Service Bus queue
+                Queue<ServiceBusMessage> messages = CreateMessages(config);
+
+                // total number of messages to be sent to the Service Bus queue
+                int messageCount = messages.Count;
+
+                // while all messages are not sent to the Service Bus queue
+                while (messages.Count > 0)
+                {
+                    // start a new batch 
+                    using ServiceBusMessageBatch messageBatch = await sender.CreateMessageBatchAsync();
+
+                    // add the first message to the batch
+                    if (messageBatch.TryAddMessage(messages.Peek()))
+                    {
+                        // dequeue the message from the .NET queue once the message is added to the batch
+                        messages.Dequeue();
+                    }
+                    else
+                    {
+                        // if the first message can't fit, then it is too large for the batch
+                        throw new Exception($"Message {messageCount - messages.Count} is too large and cannot be sent.");
+                    }
+
+                    // add as many messages as possible to the current batch
+                    while (messages.Count > 0 && messageBatch.TryAddMessage(messages.Peek()))
+                    {
+                        // dequeue the message from the .NET queue as it has been added to the batch
+                        messages.Dequeue();
+                    }
+
+                    // now, send the batch
+                    await sender.SendMessagesAsync(messageBatch);
+
+                    // if there are any remaining messages in the .NET queue, the while loop repeats 
+                }
+
+                Console.WriteLine($"Sent a batch of {messageCount} messages to the topic: {config.ServiceBusQueue}");
+
+                watch.Stop();
+                var elapsedMs = watch.ElapsedMilliseconds;
+                Console.WriteLine($"Completed in {TimeSpan.FromMilliseconds(elapsedMs).TotalSeconds} Seconds");
+            }
+        }
+
+
+        public static async Task SendEventHubMessageBatchAsync(AppSettings config)
+        {
+
+            var users = GenerateRandomGraphUsers(10000);
+            users.ToList().ForEach(x => x.SetB2CProfile(config.TenantId));
+
+            var producerClient = new EventHubProducerClient(config.EventHubConnectionString);
+            // Create a batch of events 
+            using Azure.Messaging.EventHubs.Producer.EventDataBatch eventBatch = await producerClient.CreateBatchAsync();
+
+            foreach (var u in users)
+            {
+                var send = eventBatch.TryAdd(new Azure.Messaging.EventHubs.EventData(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(u))));
+                if (!send)
+                {
+
+                }
+
+            }
+
+            await producerClient.SendAsync(eventBatch);
+
+
+        }
+
 
         public static async Task CreateUserWithCustomAttribute(GraphServiceClient graphClient, string b2cExtensionAppClientId, string tenantId)
         {
@@ -697,6 +813,7 @@ namespace b2c_ms_graph
                 }
             }
         }
+
     }
 
     public class DistinctUserComparer : IEqualityComparer<UserModel>
